@@ -97,8 +97,7 @@ def write_plot(filename, suffix=PLOT_SUFFIX, toplevel=FIGURE_PATH):
 
 def plot_MDM_targets():
     '''Plot the MDM targets on an HR diagram.'''
-    splitter = split.MDMSplitter()
-    split.initialize_mdm_sample(splitter)
+    splitter = cache.mdm_targets()
 
     RVtargs = splitter.subsample(["MDM RV Targets"])
     dlsb = splitter.subsample(["MDM DLSB"])
@@ -122,3 +121,129 @@ def plot_MDM_targets():
     plt.legend(loc="lower left")
     ax.set_xlabel(Teffstr)
     ax.set_ylabel(MKstr)
+
+def plot_APOGEE_tidsync_targets():
+    '''Plot the APOGEE tidally-synchronized targets on an HR diagram.'''
+    splitter = cache.apogee_tidsync_targets()
+    
+    fullsample = splitter.subsample([])
+    tidsync = splitter.subsample(["Fast McQuillan", "Tidsync"])
+    rv_variable_tidsync = splitter.subsample(
+        ["Fast McQuillan", "Tidsync", "RV Variable"])
+    rv_nonvariable_tidsync = splitter.subsample(
+        ["Fast McQuillan", "Tidsync", "RV Nonvariable"])
+    single_visit_tidsync = splitter.subsample(
+        ["Fast McQuillan", "Tidsync", "Single Visit"])
+    rv_variable_cool = splitter.subsample(
+        ["Fast McQuillan", "Cool Rapid Dwarfs", "RV Variable"])
+    rv_nonvariable_cool = splitter.subsample(
+        ["Fast McQuillan", "Cool Rapid Dwarfs", "RV Nonvariable"])
+    single_visit_cool = splitter.subsample(
+        ["Fast McQuillan", "Cool Rapid Dwarfs", "Single Visit"])
+
+    single_visit_chi2_tidsync = (
+        (single_visit_tidsync["VHELIO_AVG"] - 
+         single_visit_tidsync["radial_velocity"])**2 /
+    (0.5**2 + single_visit_tidsync["radial_velocity_error"]**2))
+    gaia_rv_variable_tidsync = single_visit_chi2_tidsync > 5.5
+    gaia_rv_nonvariable_tidsync = single_visit_chi2_tidsync <= 5.5
+    gaia_ambiguous_tidsync = single_visit_chi2_tidsync.mask
+
+    single_visit_chi2_cool = (
+        (single_visit_cool["VHELIO_AVG"] - 
+         single_visit_cool["radial_velocity"])**2 /
+    (0.5**2 + single_visit_cool["radial_velocity_error"]**2))
+    gaia_rv_variable_cool = single_visit_chi2_cool > 5.5
+    gaia_rv_nonvariable_cool = single_visit_chi2_cool <= 5.5
+    gaia_ambiguous_cool = single_visit_chi2_cool.mask
+
+    f, ax = plt.subplots(1, 1, figsize=figsize)
+    hr.absmag_teff_plot(
+        fullsample["TEFF"], fullsample["M_K"], color="grey", marker=".", ls="",
+        alpha=0.1, label="APOGEE", axis=ax)
+    hr.absmag_teff_plot(
+        rv_variable_tidsync["TEFF"], rv_variable_tidsync["M_K"], color="red", 
+        marker="*", ls="", label="Rapid (RV Variable)", axis=ax)
+    hr.absmag_teff_plot(
+        single_visit_tidsync["TEFF"][gaia_rv_variable_tidsync], 
+        single_visit_tidsync["M_K"][gaia_rv_variable_tidsync], color="red", 
+        marker="*", ls="", label="", axis=ax)
+    hr.absmag_teff_plot(
+        rv_nonvariable_tidsync["TEFF"], rv_nonvariable_tidsync["M_K"], 
+        color="blue", marker="*", ls="", label="Rapid (RV Nonvariable)", 
+        axis=ax)
+    hr.absmag_teff_plot(
+        single_visit_tidsync["TEFF"][gaia_rv_nonvariable_tidsync], 
+        single_visit_tidsync["M_K"][gaia_rv_nonvariable_tidsync], color="blue", 
+        marker="*", ls="", label="", axis=ax)
+    hr.absmag_teff_plot(
+        single_visit_tidsync["TEFF"][gaia_ambiguous_tidsync], 
+        single_visit_tidsync["M_K"][gaia_ambiguous_tidsync], color="black", 
+        marker="*", ls="", label="Rapid (Single Epoch)", axis=ax)
+    hr.absmag_teff_plot(
+        rv_variable_cool["TEFF"], rv_variable_cool["M_K"], color="red", 
+        marker="*", ls="", label="", axis=ax)
+    hr.absmag_teff_plot(
+        single_visit_cool["TEFF"][gaia_rv_variable_cool], 
+        single_visit_cool["M_K"][gaia_rv_variable_cool], color="red", 
+        marker="*", ls="", label="", axis=ax)
+    hr.absmag_teff_plot(
+        single_visit_cool["TEFF"][gaia_rv_nonvariable_cool], 
+        single_visit_cool["M_K"][gaia_rv_nonvariable_cool], color="blue", 
+        marker="*", ls="", label="", axis=ax)
+    hr.absmag_teff_plot(
+        rv_nonvariable_cool["TEFF"], rv_nonvariable_cool["M_K"], 
+        color="blue", marker="*", ls="", label="", axis=ax)
+    hr.absmag_teff_plot(
+        single_visit_cool["TEFF"][gaia_ambiguous_cool], 
+        single_visit_cool["M_K"][gaia_ambiguous_cool], color="black", 
+        marker="*", ls="", label="", axis=ax)
+
+    hr.absmag_teff_plot(
+        [5600, 5600, 4850, 4850, 5600], [4.5, 2.5, 2.5, 4.5, 4.5],
+        color=bc.purple, marker="", ls="--", label="MDM Selection region")
+
+    solmetiso = mist.MISTIsochrone.isochrone_from_file(0.0)
+    solmet_table = solmetiso.iso_table(5e8)
+    young_table = solmetiso.iso_table(1.2e8)
+    hr.absmag_teff_plot(
+        10**solmet_table[solmetiso.logteff_col], 
+        solmet_table[mist.band_translation["Ks"]], color=bc.pink,
+        marker="", ls="-", label="MIST (500 Myr)", axis=ax, lw=2, zorder=5)
+    hr.absmag_teff_plot(
+        10**young_table[solmetiso.logteff_col], 
+        young_table[mist.band_translation["Ks"]], color=bc.pink,
+        marker="", ls="--", label="MIST (120 Myr)", axis=ax, lw=2, zorder=5)
+
+    ax.legend()
+    ax.set_title("RV Variability for 1 day < P < 3 day targets")
+    ax.set_xlabel(Teffstr)
+    ax.set_ylabel(MKstr)
+
+def plot_APOGEE_Gaia_RV_differences():
+    '''Plot the RV differences between APOGEE and Gaia RVs.
+
+    This will be useful for using Gaia to distinguish between RV variable and
+    nonvariable objects.
+    '''
+    splitter = cache.apogee_tidsync_targets()
+
+    tidsync = splitter.subsample(["Tidsync"])
+    cool_rapid_dwarfs = splitter.subsample(["Cool Rapid Dwarfs"])
+
+    rvdiff_tidsync = tidsync["VHELIO_AVG"] - tidsync["radial_velocity"]
+    rvdiff_cool = cool_rapid_dwarfs["VHELIO_AVG"] - cool_rapid_dwarfs["radial_velocity"]
+
+    chisq_tidsync = rvdiff_tidsync ** 2 / (
+        0.5**2 + tidsync["radial_velocity_error"]**2)
+    chisq_cool = rvdiff_cool ** 2 / (
+        0.5**2 + cool_rapid_dwarfs["radial_velocity_error"]**2)
+
+    f, ax = plt.subplots(1, 1, figsize=figsize)
+    ax.hist(chisq_cool, bins=400, density=True)
+
+    chisq_array = np.linspace(0, 60, 200)
+    chisq_vals = stats.chi2.pdf(chisq_array, 1)
+    ax.plot(chisq_array, chisq_vals, 'k-')
+
+
