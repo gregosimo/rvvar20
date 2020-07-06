@@ -20,3 +20,25 @@ def mdm_targets():
     a = split.MDMSplitter()
     split.initialize_mdm_sample(a)
     return a
+
+@au.memoized
+def apogee_tidsync_targets():
+    """A data splitter to isolate APOGEE tidally-synchronized binaries."""
+    apo = split.APOGEESplitter()
+    combo = apo.join_with_McQuillan_periods()
+    split.initialize_full_APOGEE(combo)
+    split.initialize_RVvar_APOGEE(combo)
+    clean = combo.split_subsample([
+        "K Detection", "In Gaia", "APOGEE Valid Parameters"])
+    clean.data["MIST K (sol)"] = samp.calc_model_mag_fixed_age_feh_alpha(
+        clean.data["TEFF"], 0.0, "Ks", age=1e9, model="MIST v1.2")
+    clean.data["MIST K Error"] = samp.calc_model_mag_err_fixed_age_feh_alpha(
+        clean.data["TEFF"], 0.0, "Ks", teff_err=clean.data["TEFF_ERR"], age=1e9, 
+        model="MIST v1.2")
+    clean.data["K Excess"] = clean.data["M_K"] - clean.data["MIST K (sol)"] 
+    clean.data["K Excess Error Down"] = np.sqrt(
+        clean.data["M_K_err2"]**2 + clean.data["MIST K Error"]**2)
+    clean.data["K Excess Error Up"] = np.sqrt(
+        clean.data["M_K_err1"]**2 + clean.data["MIST K Error"]**2)
+    return clean
+
