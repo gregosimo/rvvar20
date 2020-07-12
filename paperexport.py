@@ -121,6 +121,7 @@ def plot_MDM_targets():
     plt.legend(loc="lower left")
     ax.set_xlabel(Teffstr)
     ax.set_ylabel(MKstr)
+    ax.set_title("MDM Targets with Gaia")
 
 def plot_APOGEE_tidsync_targets():
     '''Plot the APOGEE tidally-synchronized targets on an HR diagram.'''
