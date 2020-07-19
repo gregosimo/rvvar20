@@ -123,6 +123,111 @@ def plot_MDM_targets():
     ax.set_ylabel(MKstr)
     ax.set_title("MDM Targets with Gaia")
 
+def APOGEE_tidsync_target_quality(
+        speclook=False, berger_companions=False, vsini_check=False):
+    '''Explore the APOGEE tidally synchronzied candidate quality.
+
+    The type of exploration depends on the keyword flags enabled.
+
+    Speclook will pull up the spectra for the targets in a web browser.'''
+    splitter = cache.apogee_tidsync_targets()
+
+    rv_variable_tidsync = splitter.subsample(
+        ["Fast McQuillan", "Tidsync", "RV Variable"])
+    rv_nonvariable_tidsync = splitter.subsample(
+        ["Fast McQuillan", "Tidsync", "RV Nonvariable"])
+    single_visit_tidsync = splitter.subsample(
+        ["Fast McQuillan", "Tidsync", "Single Visit"])
+    rv_variable_cool = splitter.subsample(
+        ["Fast McQuillan", "Cool Rapid Dwarfs", "RV Variable"])
+    rv_nonvariable_cool = splitter.subsample(
+        ["Fast McQuillan", "Cool Rapid Dwarfs", "RV Nonvariable"])
+    single_visit_cool = splitter.subsample(
+        ["Fast McQuillan", "Cool Rapid Dwarfs", "Single Visit"])
+
+    single_visit_chi2_tidsync = (
+        (single_visit_tidsync["VHELIO_AVG"] - 
+         single_visit_tidsync["radial_velocity"])**2 /
+    (0.5**2 + single_visit_tidsync["radial_velocity_error"]**2))
+    gaia_rv_variable_tidsync = au.multi_logical_and(
+        ~single_visit_chi2_tidsync.mask, single_visit_chi2_tidsync > 5.5)
+    gaia_rv_nonvariable_tidsync = au.multi_logical_and(
+        ~single_visit_chi2_tidsync.mask, single_visit_chi2_tidsync <= 5.5)
+    gaia_ambiguous_tidsync = single_visit_chi2_tidsync.mask
+
+    single_visit_chi2_cool = (
+        (single_visit_cool["VHELIO_AVG"] - 
+         single_visit_cool["radial_velocity"])**2 /
+    (0.5**2 + single_visit_cool["radial_velocity_error"]**2))
+    gaia_rv_variable_cool = au.multi_logical_and(
+        ~single_visit_chi2_cool.mask, single_visit_chi2_cool > 5.5)
+    gaia_rv_nonvariable_cool = au.multi_logical_and(
+        ~single_visit_chi2_cool.mask, single_visit_chi2_cool <= 5.5)
+    gaia_ambiguous_cool = single_visit_chi2_cool.mask
+
+    # First let's look at the APOGEE spectra
+    if speclook:
+        print("RV Variable targets:")
+        # 2M19012311+3939550 looks like a normal spectrum.
+        # 2M19502492+4629099 looks normal with spectrum. COLORTE_WARN is
+        # triggered.
+        # 2M19045950+5037063 may be an SB2. There does seem to be a template
+        # mismatch for this target.
+        for row in rv_variable_tidsync[["APOGEE_ID", "LOCATION_ID"]]:
+            print("APOGEE ID: {0:s}, LOCATION ID: {1:d}".format(
+                row[0], row[1]))
+        for row in single_visit_tidsync[["APOGEE_ID", "LOCATION_ID"]][gaia_rv_variable_tidsync]:
+            print("APOGEE ID: {0:s}, LOCATION ID: {1:d}".format(
+                row[0], row[1]))
+        for row in rv_variable_cool[["APOGEE_ID", "LOCATION_ID"]]:
+            print("APOGEE ID: {0:s}, LOCATION ID: {1:d}".format(
+                row[0], row[1]))
+        for row in single_visit_cool[["APOGEE_ID", "LOCATION_ID"]][gaia_rv_variable_cool]:
+            print("APOGEE ID: {0:s}, LOCATION ID: {1:d}".format(
+                row[0], row[1]))
+        print("RV Nonvariable targets:")
+        # 2M19351864+4214367 spectrum looks normal. There is a COLORTE_WARN flag.
+        # 2M19330557+4619084 spectrum looks normal.
+        # 2M19211671+4701074 spectrum looks normal.
+        # 2M19273672+4940144 spectrum looks normal.
+        # 2M19415749+4249137 spectrum looks normal. There is a COLORTE_WARN
+        # flag.
+        # 2M19235494+3834587 spectrum looks normal.
+        # 2M18563342+4513481 spectrum looks normal. There is a COLORTE_WARN
+        # flag.
+        # 2M19384193+4551547 spectrum looks normal. There is a COLORTE_WARN
+        # flag.
+        for row in rv_nonvariable_tidsync[["APOGEE_ID", "LOCATION_ID"]]:
+            print("APOGEE ID: {0:s}, LOCATION ID: {1:d}".format(
+                row[0], row[1]))
+        for row in single_visit_tidsync[["APOGEE_ID", "LOCATION_ID"]][gaia_rv_nonvariable_tidsync]:
+            print("APOGEE ID: {0:s}, LOCATION ID: {1:d}".format(
+                row[0], row[1]))
+        for row in rv_nonvariable_cool[["APOGEE_ID", "LOCATION_ID"]]:
+            print("APOGEE ID: {0:s}, LOCATION ID: {1:d}".format(
+                row[0], row[1]))
+        for row in single_visit_cool[["APOGEE_ID", "LOCATION_ID"]][gaia_rv_nonvariable_cool]:
+            print("APOGEE ID: {0:s}, LOCATION ID: {1:d}".format(
+                row[0], row[1]))
+    if berger_companions:
+        print("RV Variable:")
+        print(rv_variable_tidsync[["APOGEE_ID", "Ncomp"]])
+        print(single_visit_tidsync[["APOGEE_ID", "Ncomp"]][gaia_rv_variable_tidsync])
+        print(rv_variable_cool[["APOGEE_ID", "Ncomp"]])
+        print(single_visit_cool[["APOGEE_ID", "Ncomp"]][gaia_rv_variable_cool])
+        
+        print("RV Nonvariable:")
+        print(rv_nonvariable_tidsync[["APOGEE_ID", "Ncomp"]])
+        print(single_visit_tidsync[["APOGEE_ID", "Ncomp"]][gaia_rv_nonvariable_tidsync])
+        print(rv_nonvariable_cool[["APOGEE_ID", "Ncomp"]])
+        print(single_visit_cool[["APOGEE_ID", "Ncomp"]][gaia_rv_nonvariable_cool])
+    if vsini_check:
+        
+
+
+
+
+
 def plot_APOGEE_tidsync_targets():
     '''Plot the APOGEE tidally-synchronized targets on an HR diagram.'''
     splitter = cache.apogee_tidsync_targets()
@@ -146,16 +251,20 @@ def plot_APOGEE_tidsync_targets():
         (single_visit_tidsync["VHELIO_AVG"] - 
          single_visit_tidsync["radial_velocity"])**2 /
     (0.5**2 + single_visit_tidsync["radial_velocity_error"]**2))
-    gaia_rv_variable_tidsync = single_visit_chi2_tidsync > 5.5
-    gaia_rv_nonvariable_tidsync = single_visit_chi2_tidsync <= 5.5
+    gaia_rv_variable_tidsync = au.multi_logical_and(
+        ~single_visit_chi2_tidsync.mask, single_visit_chi2_tidsync > 5.5)
+    gaia_rv_nonvariable_tidsync = au.multi_logical_and(
+        ~single_visit_chi2_tidsync.mask, single_visit_chi2_tidsync <= 5.5)
     gaia_ambiguous_tidsync = single_visit_chi2_tidsync.mask
 
     single_visit_chi2_cool = (
         (single_visit_cool["VHELIO_AVG"] - 
          single_visit_cool["radial_velocity"])**2 /
     (0.5**2 + single_visit_cool["radial_velocity_error"]**2))
-    gaia_rv_variable_cool = single_visit_chi2_cool > 5.5
-    gaia_rv_nonvariable_cool = single_visit_chi2_cool <= 5.5
+    gaia_rv_variable_cool = au.multi_logical_and(
+        ~single_visit_chi2_cool.mask, single_visit_chi2_cool > 5.5)
+    gaia_rv_nonvariable_cool = au.multi_logical_and(
+        ~single_visit_chi2_cool.mask, single_visit_chi2_cool <= 5.5)
     gaia_ambiguous_cool = single_visit_chi2_cool.mask
 
     f, ax = plt.subplots(1, 1, figsize=figsize)
