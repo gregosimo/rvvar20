@@ -124,7 +124,8 @@ def plot_MDM_targets():
     ax.set_title("MDM Targets with Gaia")
 
 def APOGEE_tidsync_target_quality(
-        speclook=False, berger_companions=False, vsini_check=False):
+        speclook=False, berger_companions=False, vsini_check=False,
+        gaia_excess_noise=False, visits=False):
     '''Explore the APOGEE tidally synchronzied candidate quality.
 
     The type of exploration depends on the keyword flags enabled.
@@ -217,11 +218,201 @@ def APOGEE_tidsync_target_quality(
         print(single_visit_cool[["APOGEE_ID", "Ncomp"]][gaia_rv_variable_cool])
         
         print("RV Nonvariable:")
+        # 2M19211671+4701074 has two companions.
         print(rv_nonvariable_tidsync[["APOGEE_ID", "Ncomp"]])
         print(single_visit_tidsync[["APOGEE_ID", "Ncomp"]][gaia_rv_nonvariable_tidsync])
         print(rv_nonvariable_cool[["APOGEE_ID", "Ncomp"]])
         print(single_visit_cool[["APOGEE_ID", "Ncomp"]][gaia_rv_nonvariable_cool])
+
     if vsini_check:
+        f, ax = plt.subplots(1, 1, figsize=figsize)
+        rot.plot_vsini_velocity(
+            rv_variable_tidsync["VSINI"], rv_variable_tidsync["Prot"],
+            rv_variable_tidsync["e_Prot"], 
+            rv_variable_tidsync["MIST R (APOGEE)"],
+            rv_variable_tidsync["MIST R Err (APOGEE)"], color="red", ax=ax,
+            label="RV Variable", sini_label=False, marker="*", ms=10)
+        rot.plot_vsini_velocity(
+            single_visit_tidsync["VSINI"][gaia_rv_variable_tidsync], 
+            single_visit_tidsync["Prot"][gaia_rv_variable_tidsync],
+            single_visit_tidsync["e_Prot"][gaia_rv_variable_tidsync], 
+            single_visit_tidsync["MIST R (APOGEE)"][gaia_rv_variable_tidsync],
+            single_visit_tidsync["MIST R Err (APOGEE)"][gaia_rv_variable_tidsync], 
+            color="red", ax=ax, label="", sini_label=False, marker="*", ms=10)
+        rot.plot_vsini_velocity(
+            rv_variable_cool["VSINI"], rv_variable_cool["Prot"],
+            rv_variable_cool["e_Prot"], 
+            rv_variable_cool["MIST R (APOGEE)"],
+            rv_variable_cool["MIST R Err (APOGEE)"], color="red", ax=ax, 
+            label="", sini_label=False, marker="*", ms=10)
+        # 2M19045950+5037063 has very high vsini for rotation period. Is SB2.
+        rot.plot_vsini_velocity(
+            single_visit_cool["VSINI"][gaia_rv_variable_cool], 
+            single_visit_cool["Prot"][gaia_rv_variable_cool],
+            single_visit_cool["e_Prot"][gaia_rv_variable_cool], 
+            single_visit_cool["MIST R (APOGEE)"][gaia_rv_variable_cool],
+            single_visit_cool["MIST R Err (APOGEE)"][gaia_rv_variable_cool], 
+            color="red", ax=ax, label="", sini_label=False, marker="*", ms=10)
+        
+        # 2M19211671+4701074 is a slow rotator compared to vsini.
+        rot.plot_vsini_velocity(
+            rv_nonvariable_tidsync["VSINI"], rv_nonvariable_tidsync["Prot"],
+            rv_nonvariable_tidsync["e_Prot"], 
+            rv_nonvariable_tidsync["MIST R (APOGEE)"],
+            rv_nonvariable_tidsync["MIST R Err (APOGEE)"], color="blue", ax=ax,
+            label="RV Nonvariable", sini_label=False, marker="o", ms=10)
+        rot.plot_vsini_velocity(
+            single_visit_tidsync["VSINI"][gaia_rv_nonvariable_tidsync], 
+            single_visit_tidsync["Prot"][gaia_rv_nonvariable_tidsync],
+            single_visit_tidsync["e_Prot"][gaia_rv_nonvariable_tidsync], 
+            single_visit_tidsync["MIST R (APOGEE)"][gaia_rv_nonvariable_tidsync],
+            single_visit_tidsync["MIST R Err (APOGEE)"][gaia_rv_nonvariable_tidsync], 
+            color="blue", ax=ax, label="", sini_label=False, marker="o", ms=10)
+        # 2M19235494+3834587 has very high vsini for period.
+        rot.plot_vsini_velocity(
+            rv_nonvariable_cool["VSINI"], rv_nonvariable_cool["Prot"],
+            rv_nonvariable_cool["e_Prot"], 
+            rv_nonvariable_cool["MIST R (APOGEE)"],
+            rv_nonvariable_cool["MIST R Err (APOGEE)"], color="blue", ax=ax,
+            label="", sini_label=False, marker="o", ms=10)
+        rot.plot_vsini_velocity(
+            single_visit_cool["VSINI"][gaia_rv_nonvariable_cool], 
+            single_visit_cool["Prot"][gaia_rv_nonvariable_cool],
+            single_visit_cool["e_Prot"][gaia_rv_nonvariable_cool], 
+            single_visit_cool["MIST R (APOGEE)"][gaia_rv_nonvariable_cool],
+            single_visit_cool["MIST R Err (APOGEE)"][gaia_rv_nonvariable_cool], 
+            color="blue", ax=ax, label="", sini_label=False, marker="o", ms=10)
+        
+        ax.title("Rotation Agreement for Rapid Rotators")
+        ax.legend(loc="upper left")
+
+    if gaia_excess_noise:
+        # First let's see if our targets have noise.
+        print("RV Variable:")
+        print(rv_variable_tidsync[[
+            "APOGEE_ID", "astrometric_excess_noise", 
+            "astrometric_excess_noise_sig"]])
+        print(single_visit_tidsync[[
+            "APOGEE_ID", "astrometric_excess_noise", 
+            "astrometric_excess_noise_sig"]][gaia_rv_variable_tidsync])
+        print(rv_variable_cool[[
+            "APOGEE_ID", "astrometric_excess_noise", 
+            "astrometric_excess_noise_sig"]])
+        # 2M19502492+4629099 has excess noise with a significance of 12
+        print(single_visit_cool[[
+            "APOGEE_ID", "astrometric_excess_noise", 
+            "astrometric_excess_noise_sig"]][gaia_rv_variable_cool])
+        
+        print("RV Nonvariable:")
+        # 2M19351864+4214367 has excess noise with a significance of 12.
+        print(rv_nonvariable_tidsync[[
+            "APOGEE_ID", "astrometric_excess_noise", 
+            "astrometric_excess_noise_sig"]])
+        print(single_visit_tidsync[[
+            "APOGEE_ID", "astrometric_excess_noise", 
+            "astrometric_excess_noise_sig"]][gaia_rv_nonvariable_tidsync])
+        # 2M18563342+4513481 has excess noise with a significance of 27.
+        print(rv_nonvariable_cool[[
+            "APOGEE_ID", "astrometric_excess_noise", 
+            "astrometric_excess_noise_sig"]])
+        print(single_visit_cool[[
+            "APOGEE_ID", "astrometric_excess_noise", 
+            "astrometric_excess_noise_sig"]][gaia_rv_nonvariable_cool])
+
+        alltidsync = splitter.subsample(["Tidsync"])
+        allcool = splitter.subsample(["Cool Rapid Dwarfs"])
+        allstars = vstack([alltidsync, allcool])
+        assert not any(allstars["astrometric_excess_noise"].mask)
+        assert not any(allstars["astrometric_excess_noise_sig"].mask)
+        # Let's get rid of stars with no excess noise.
+        noisy_stars = allstars[allstars["astrometric_excess_noise"] > 0]
+
+        all_photbins = allstars[allstars["K Excess"] < -0.3]
+        all_singles = allstars[allstars["K Excess"] >= -0.3]
+
+        f, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 9))
+        n, bins, patches = ax1.hist(
+            [all_photbins["astrometric_excess_noise"], 
+             all_singles["astrometric_excess_noise"]], bins=50,
+             histtype="barstacked", color=["violet", "green"], 
+             label=["Photometric Binaries", "Photometric Singles"],
+             stacked=True)
+
+    if visits:
+        print("RV Variable:")
+        print(rv_variable_tidsync[["APOGEE_ID", "NVISITS"]])
+        print(single_visit_tidsync[["APOGEE_ID", "NVISITS"]][gaia_rv_variable_tidsync])
+        print(rv_variable_cool[["APOGEE_ID", "NVISITS"]])
+        print(single_visit_cool[["APOGEE_ID", "NVISITS"]][gaia_rv_variable_cool])
+        
+        print("RV Nonvariable:")
+        # 2M19211671+4701074 has two companions.
+        print(rv_nonvariable_tidsync[["APOGEE_ID", "NVISITS"]])
+        print(single_visit_tidsync[["APOGEE_ID", "NVISITS"]][gaia_rv_nonvariable_tidsync])
+        print(rv_nonvariable_cool[["APOGEE_ID", "NVISITS"]])
+        print(single_visit_cool[["APOGEE_ID", "NVISITS"]][gaia_rv_nonvariable_cool])
+
+    if vsini_check:
+        f, ax = plt.subplots(1, 1, figsize=figsize)
+        rot.plot_vsini_velocity(
+            rv_variable_tidsync["VSINI"], rv_variable_tidsync["Prot"],
+            rv_variable_tidsync["e_Prot"], 
+            rv_variable_tidsync["MIST R (APOGEE)"],
+            rv_variable_tidsync["MIST R Err (APOGEE)"], color="red", ax=ax,
+            label="RV Variable", sini_label=False, marker="*", ms=10)
+        rot.plot_vsini_velocity(
+            single_visit_tidsync["VSINI"][gaia_rv_variable_tidsync], 
+            single_visit_tidsync["Prot"][gaia_rv_variable_tidsync],
+            single_visit_tidsync["e_Prot"][gaia_rv_variable_tidsync], 
+            single_visit_tidsync["MIST R (APOGEE)"][gaia_rv_variable_tidsync],
+            single_visit_tidsync["MIST R Err (APOGEE)"][gaia_rv_variable_tidsync], 
+            color="red", ax=ax, label="", sini_label=False, marker="*", ms=10)
+        rot.plot_vsini_velocity(
+            rv_variable_cool["VSINI"], rv_variable_cool["Prot"],
+            rv_variable_cool["e_Prot"], 
+            rv_variable_cool["MIST R (APOGEE)"],
+            rv_variable_cool["MIST R Err (APOGEE)"], color="red", ax=ax, 
+            label="", sini_label=False, marker="*", ms=10)
+        # 2M19045950+5037063 has very high vsini for rotation period. Is SB2.
+        rot.plot_vsini_velocity(
+            single_visit_cool["VSINI"][gaia_rv_variable_cool], 
+            single_visit_cool["Prot"][gaia_rv_variable_cool],
+            single_visit_cool["e_Prot"][gaia_rv_variable_cool], 
+            single_visit_cool["MIST R (APOGEE)"][gaia_rv_variable_cool],
+            single_visit_cool["MIST R Err (APOGEE)"][gaia_rv_variable_cool], 
+            color="red", ax=ax, label="", sini_label=False, marker="*", ms=10)
+        
+        # 2M19211671+4701074 is a slow rotator compared to vsini.
+        rot.plot_vsini_velocity(
+            rv_nonvariable_tidsync["VSINI"], rv_nonvariable_tidsync["Prot"],
+            rv_nonvariable_tidsync["e_Prot"], 
+            rv_nonvariable_tidsync["MIST R (APOGEE)"],
+            rv_nonvariable_tidsync["MIST R Err (APOGEE)"], color="blue", ax=ax,
+            label="RV Nonvariable", sini_label=False, marker="o", ms=10)
+        rot.plot_vsini_velocity(
+            single_visit_tidsync["VSINI"][gaia_rv_nonvariable_tidsync], 
+            single_visit_tidsync["Prot"][gaia_rv_nonvariable_tidsync],
+            single_visit_tidsync["e_Prot"][gaia_rv_nonvariable_tidsync], 
+            single_visit_tidsync["MIST R (APOGEE)"][gaia_rv_nonvariable_tidsync],
+            single_visit_tidsync["MIST R Err (APOGEE)"][gaia_rv_nonvariable_tidsync], 
+            color="blue", ax=ax, label="", sini_label=False, marker="o", ms=10)
+        # 2M19235494+3834587 has very high vsini for period.
+        rot.plot_vsini_velocity(
+            rv_nonvariable_cool["VSINI"], rv_nonvariable_cool["Prot"],
+            rv_nonvariable_cool["e_Prot"], 
+            rv_nonvariable_cool["MIST R (APOGEE)"],
+            rv_nonvariable_cool["MIST R Err (APOGEE)"], color="blue", ax=ax,
+            label="", sini_label=False, marker="o", ms=10)
+        rot.plot_vsini_velocity(
+            single_visit_cool["VSINI"][gaia_rv_nonvariable_cool], 
+            single_visit_cool["Prot"][gaia_rv_nonvariable_cool],
+            single_visit_cool["e_Prot"][gaia_rv_nonvariable_cool], 
+            single_visit_cool["MIST R (APOGEE)"][gaia_rv_nonvariable_cool],
+            single_visit_cool["MIST R Err (APOGEE)"][gaia_rv_nonvariable_cool], 
+            color="blue", ax=ax, label="", sini_label=False, marker="o", ms=10)
+        
+        ax.title("Rotation Agreement for Rapid Rotators")
+        ax.legend(loc="upper left")
         
 
 

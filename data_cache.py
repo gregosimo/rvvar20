@@ -40,5 +40,13 @@ def apogee_tidsync_targets():
         clean.data["M_K_err2"]**2 + clean.data["MIST K Error"]**2)
     clean.data["K Excess Error Up"] = np.sqrt(
         clean.data["M_K_err1"]**2 + clean.data["MIST K Error"]**2)
+    clean.data["MIST R (APOGEE)"] = samp.calc_model_fixed_age_feh_alpha(
+        np.log10(clean.data["TEFF"]), mist.MISTIsochrone.logteff_col,
+        mist.MISTIsochrone.radius_col, 0.0, 1e9)
+    apogee_logteff_err = (
+        clean.data["TEFF_ERR"] / clean.data["TEFF"] / np.log(10))
+    clean.data["MIST R Err (APOGEE)"] = samp.calc_model_err_fixed_age_feh_alpha(
+        np.log10(clean.data["TEFF"]), mist.MISTIsochrone.logteff_col,
+        mist.MISTIsochrone.radius_col, apogee_logteff_err, 0.0, age=1e9)
     return clean
 
